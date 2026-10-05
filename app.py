@@ -25,23 +25,26 @@ INFO_PATH = "class_names.json"
 @st.cache_resource
 def load_assets():
     """Downloads model from Google Drive if missing and loads assets."""
+
     if not os.path.exists(MODEL_PATH):
         st.info("Downloading model weights from Google Drive...")
-url = f"https://drive.google.com/uc?export=download&id={FILE_ID}"
-gdown.download(url, MODEL_PATH, quiet=False)
+
+        url = f"https://drive.google.com/uc?export=download&id={FILE_ID}"
+        gdown.download(url, MODEL_PATH, quiet=False)
 
     model = tf.keras.models.load_model(MODEL_PATH, compile=False)
-    
+
     with open(INFO_PATH, "r") as f:
         meta = json.load(f)
-        
+
     return model, meta
+
 
 # Load model and metadata
 model, meta = load_assets()
+
 class_names = meta.get("class_names", [])
 img_size = tuple(meta.get("img_size", [224, 224]))
-
 # ---------------------------------------------------------
 # UI & Header Layout
 # ---------------------------------------------------------
