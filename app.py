@@ -23,42 +23,51 @@ INFO_PATH = "class_names.json"
 FILE_ID = "1H_kwXv6AO-Ran6XoZL-T5zCUfSCbapwi"
 
 # ---------------------------------------------------------
-# Load Model + Metadata
+# Load Assets (MODEL + META)
 # ---------------------------------------------------------
 @st.cache_resource
 def load_assets():
 
-    import time
+    # Download model if not exists
+    if not os.path.exists(MODEL_PATH):
 
-    # delete broken file if exists
-    if os.path.exists(MODEL_PATH):
-        os.remove(MODEL_PATH)
+        st.info("Downloading model...")
 
-    st.info("Downloading model... please wait")
+        url = f"https://drive.google.com/uc?id={FILE_ID}"
+        gdown.download(url, MODEL_PATH, quiet=False)
 
-    url = f"https://drive.google.com/uc?id={FILE_ID}"
-
-    result = gdown.download(url, MODEL_PATH, quiet=False)
-
-    # ❗ check download success
-    if result is None or not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) == 0:
-        st.error("Model download failed from Google Drive ❌")
+    # Check file validity
+    if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) == 0:
+        st.error("Model download failed ❌")
         st.stop()
 
-    # load model safely
+    # Load model
     model = tf.keras.models.load_model(MODEL_PATH, compile=False)
 
+    # Load metadata
     with open(INFO_PATH, "r") as f:
         meta = json.load(f)
 
     return model, meta
+
+
+# Safe load
+model, meta = load_assets()
+
+class_names = meta.get("class_names", [])
+img_size = tuple(meta.get("img_size", [224, 224]))
+
 # ---------------------------------------------------------
 # UI Header
 # ---------------------------------------------------------
 st.title("🔬 Skin Lesion Classifier")
-st.caption(f"Model: {meta.get('model', 'CNN')} | Classes: {', '.join(class_names)}")
 
-st.warning("Educational demo only. NOT a medical device.")
+st.caption(
+    f"Model: {meta.get('model', 'CNN')} | "
+    f"Classes: {', '.join(class_names)}"
+)
+
+st.warning("Educational demo only. NOT for medical diagnosis.")
 
 threshold = st.sidebar.slider("Decision Threshold", 0.05, 0.95, 0.50, 0.05)
 
@@ -71,6 +80,7 @@ uploaded = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
 
 if uploaded:
 
+    # show image
     image = Image.open(uploaded).convert("RGB")
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
@@ -82,13 +92,15 @@ if uploaded:
     preds = model.predict(arr, verbose=0)[0]
 
     class_index = np.argmax(preds)
-    label = class_names[class_index]
+    label = class_names[class_index] if len(class_names) > 0 else "Unknown"
     confidence = float(np.max(preds))
 
+    # output
     st.subheader("Result")
     st.write(f"**Prediction:** `{label.upper()}`")
     st.metric("Confidence", f"{confidence * 100:.2f}%")
 
+    # probabilities
     st.subheader("Class Probabilities")
 
     prob_dict = {}
