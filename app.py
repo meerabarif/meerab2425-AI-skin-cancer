@@ -29,20 +29,11 @@ FILE_ID = "1H_kwXv6AO-Ran6XoZL-T5zCUfSCbapwi"
 def load_assets():
 
     # download if not exists
-    if not os.path.exists(MODEL_PATH):
-        st.info("Downloading model...")
+   if not os.path.exists(MODEL_PATH):
+    st.info("Downloading model...")
 
-        url = f"https://drive.google.com/uc?id={FILE_ID}"
-        gdown.download(url, MODEL_PATH, quiet=False, fuzzy=True)
-
-    model = tf.keras.models.load_model(MODEL_PATH, compile=False)
-
-    with open(INFO_PATH, "r") as f:
-        meta = json.load(f)
-
-    return model, meta
-
-
+    url = f"https://drive.google.com/uc?id={FILE_ID}"
+    gdown.download(url, MODEL_PATH)
 # load once
 model, meta = load_assets()
 
