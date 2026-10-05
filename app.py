@@ -28,18 +28,30 @@ FILE_ID = "1H_kwXv6AO-Ran6XoZL-T5zCUfSCbapwi"
 @st.cache_resource
 def load_assets():
 
-    # download if not exists
-   if not os.path.exists(MODEL_PATH):
-    st.info("Downloading model...")
+    import time
+
+    # delete broken file if exists
+    if os.path.exists(MODEL_PATH):
+        os.remove(MODEL_PATH)
+
+    st.info("Downloading model... please wait")
 
     url = f"https://drive.google.com/uc?id={FILE_ID}"
-    gdown.download(url, MODEL_PATH)
-# load once
-model, meta = load_assets()
 
-class_names = meta.get("class_names", [])
-img_size = tuple(meta.get("img_size", [224, 224]))
+    result = gdown.download(url, MODEL_PATH, quiet=False)
 
+    # ❗ check download success
+    if result is None or not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) == 0:
+        st.error("Model download failed from Google Drive ❌")
+        st.stop()
+
+    # load model safely
+    model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+
+    with open(INFO_PATH, "r") as f:
+        meta = json.load(f)
+
+    return model, meta
 # ---------------------------------------------------------
 # UI Header
 # ---------------------------------------------------------
