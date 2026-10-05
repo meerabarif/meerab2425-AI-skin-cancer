@@ -27,16 +27,13 @@ FILE_ID = "1H_kwXv6AO-Ran6XoZL-T5zCUfSCbapwi"
 # ---------------------------------------------------------
 @st.cache_resource
 def load_assets():
-@st.cache_resource
-def load_assets():
 
-    if os.path.exists(MODEL_PATH):
-        os.remove(MODEL_PATH)  # force fresh download
+    # download if not exists
+    if not os.path.exists(MODEL_PATH):
+        st.info("Downloading model...")
 
-    st.info("Downloading fresh model...")
-
-    url = f"https://drive.google.com/uc?export=download&id={FILE_ID}"
-    gdown.download(url, MODEL_PATH, quiet=False)
+        url = f"https://drive.google.com/uc?id={FILE_ID}"
+        gdown.download(url, MODEL_PATH, quiet=False, fuzzy=True)
 
     model = tf.keras.models.load_model(MODEL_PATH, compile=False)
 
@@ -44,6 +41,13 @@ def load_assets():
         meta = json.load(f)
 
     return model, meta
+
+
+# load once
+model, meta = load_assets()
+
+class_names = meta.get("class_names", [])
+img_size = tuple(meta.get("img_size", [224, 224]))
 
 # ---------------------------------------------------------
 # UI Header
@@ -64,28 +68,24 @@ uploaded = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
 
 if uploaded:
 
-    # Show image
     image = Image.open(uploaded).convert("RGB")
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
-    # Preprocess
+    # preprocess
     img = image.resize(img_size)
     arr = np.asarray(img, dtype=np.float32)[None, ...] / 255.0
 
-    # Prediction
+    # prediction
     preds = model.predict(arr, verbose=0)[0]
 
-    # Best class
     class_index = np.argmax(preds)
     label = class_names[class_index]
     confidence = float(np.max(preds))
 
-    # Display result
     st.subheader("Result")
     st.write(f"**Prediction:** `{label.upper()}`")
     st.metric("Confidence", f"{confidence * 100:.2f}%")
 
-    # Probabilities
     st.subheader("Class Probabilities")
 
     prob_dict = {}
