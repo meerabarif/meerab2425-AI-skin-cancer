@@ -7,7 +7,7 @@ from PIL import Image
 import gdown
 
 # ---------------------------------------------------------
-# Page Configuration
+# Page Setup
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="Skin Lesion Classifier",
@@ -28,16 +28,13 @@ FILE_ID = "1H_kwXv6AO-Ran6XoZL-T5zCUfSCbapwi"
 @st.cache_resource
 def load_assets():
 
-    # Download model if not exists
     if not os.path.exists(MODEL_PATH):
-        st.info("Downloading model weights from Google Drive...")
+        st.info("Downloading model from Google Drive...")
         url = f"https://drive.google.com/uc?export=download&id={FILE_ID}"
         gdown.download(url, MODEL_PATH, quiet=False)
 
-    # Load model
     model = tf.keras.models.load_model(MODEL_PATH, compile=False)
 
-    # Load metadata
     with open(INFO_PATH, "r") as f:
         meta = json.load(f)
 
@@ -53,29 +50,18 @@ img_size = tuple(meta.get("img_size", [224, 224]))
 # UI Header
 # ---------------------------------------------------------
 st.title("🔬 Skin Lesion Classifier")
-st.caption(f"Model: **{meta.get('model', 'CNN')}** | Classes: {', '.join(class_names)}")
+st.caption(f"Model: {meta.get('model', 'CNN')} | Classes: {', '.join(class_names)}")
 
-st.warning(
-    "Educational demo only. NOT a medical device. "
-    "Consult a dermatologist for diagnosis."
-)
+st.warning("Educational demo only. NOT a medical device.")
 
-# Sidebar
-threshold = st.sidebar.slider(
-    "Decision threshold (malignant)",
-    0.05, 0.95, 0.50, 0.05
-)
-
-st.sidebar.write(
-    "Lower threshold = more sensitive (catches more malignant cases)"
-)
+threshold = st.sidebar.slider("Decision Threshold", 0.05, 0.95, 0.50, 0.05)
 
 st.sidebar.json(meta.get("test_metrics", {}))
 
 # ---------------------------------------------------------
-# Prediction Logic
+# Upload Image
 # ---------------------------------------------------------
-uploaded = st.file_uploader("Upload a skin lesion image", type=["jpg", "jpeg", "png"])
+uploaded = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
 
 if uploaded:
 
@@ -88,17 +74,24 @@ if uploaded:
     arr = np.asarray(img, dtype=np.float32)[None, ...] / 255.0
 
     # Prediction
-    pred = model.predict(arr, verbose=0)[0][0]
+    preds = model.predict(arr, verbose=0)[0]
 
-    # Decision
-    if pred >= threshold:
-        label = class_names[1]
-        conf = pred
-    else:
-        label = class_names[0]
-        conf = 1 - pred
+    # Best class
+    class_index = np.argmax(preds)
+    label = class_names[class_index]
+    confidence = float(np.max(preds))
 
-    # Output
-    st.subheader("Results")
+    # Display result
+    st.subheader("Result")
     st.write(f"**Prediction:** `{label.upper()}`")
-    st.metric("Confidence Score", f"{conf * 100:.2f}%")
+    st.metric("Confidence", f"{confidence * 100:.2f}%")
+
+    # Probabilities
+    st.subheader("Class Probabilities")
+
+    prob_dict = {}
+    for i in range(len(class_names)):
+        prob_dict[class_names[i]] = float(preds[i])
+        st.write(f"{class_names[i]}: {preds[i]*100:.2f}%")
+
+    st.bar_chart(prob_dict)
