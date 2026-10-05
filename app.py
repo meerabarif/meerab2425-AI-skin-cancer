@@ -18,7 +18,7 @@ st.set_page_config(
 # ---------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------
-MODEL_PATH = "model.keras"
+MODEL_PATH = "model.h5"
 INFO_PATH = "class_names.json"
 FILE_ID = "1H_kwXv6AO-Ran6XoZL-T5zCUfSCbapwi"
 
