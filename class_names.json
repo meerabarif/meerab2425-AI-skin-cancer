@@ -1,0 +1,20 @@
+{
+  "class_names": [
+    "dermis",
+    "dermquest"
+  ],
+  "positive_class": "dermquest",
+  "img_size": [
+    224,
+    224
+  ],
+  "model": "EfficientNetB0",
+  "test_metrics": {
+    "Accuracy": 0.9032258064516129,
+    "Precision": 0.9487179487179487,
+    "Recall (Sensitivity)": 0.9024390243902439,
+    "Specificity": 0.9047619047619048,
+    "F1": 0.925,
+    "ROC-AUC": 0.9349593495934959
+  }
+}
